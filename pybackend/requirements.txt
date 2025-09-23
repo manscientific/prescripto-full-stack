@@ -1,0 +1,10 @@
+cmake
+dlib
+fastapi
+uvicorn
+pymongo
+opencv-python
+face-recognition
+numpy
+ cmake
+ dlib
