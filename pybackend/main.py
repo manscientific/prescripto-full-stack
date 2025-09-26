@@ -11,6 +11,8 @@ import os
 # Load environment variables
 load_dotenv()
 frontend = os.getenv("frontend")
+mongo_uri = os.getenv("MONGODB_URI")   # <-- added
+
 app = FastAPI()
 
 app.add_middleware(
@@ -21,10 +23,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = MongoClient("mongodb://localhost:27017/")
+# Use MongoDB from environment variable
+client = MongoClient(mongo_uri)   # <-- replaced
 db = client["waiting_room"]
 users = db["users"]
 doctors = db["doctors"]
+
 
 # ---- Helper ----
 def get_or_create_doctor(name: str):
@@ -130,3 +134,4 @@ async def verify_user(data: dict):
 def get_count(doctor_name: str):
     doctor = get_or_create_doctor(doctor_name)
     return {"doctorName": doctor["name"], "waiting_count": doctor["waiting_count"]}
+# uvicorn main:app --reload
