@@ -1,11 +1,7 @@
-
 fastapi
 uvicorn
 pymongo
 python-dotenv
+deepface
 opencv-python-headless
 numpy
-
-# Prebuilt dlib and face-recognition will work on Python 3.10/3.11
-dlib==19.24.2
-face-recognition==1.3.0
