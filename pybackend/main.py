@@ -1,4 +1,5 @@
 import cv2
+import base64
 from deepface import DeepFace
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,14 +7,11 @@ from pymongo import MongoClient
 import numpy as np
 
 # ---------------------------
-# Config (directly written here for now)
+# Config
 # ---------------------------
 FRONTEND_URL = "https://prescripto-full-stack-five.vercel.app"
 MONGODB_URI = "mongodb+srv://manscientificks:12345678sh@cluster0.kjqvrc9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
-# ---------------------------
-# FastAPI App
-# ---------------------------
 app = FastAPI()
 
 # ✅ Allow frontend + local dev
@@ -32,7 +30,7 @@ app.add_middleware(
 )
 
 # ---------------------------
-# Database Setup
+# Database
 # ---------------------------
 client = MongoClient(MONGODB_URI)
 db = client["waiting_room"]
@@ -50,6 +48,14 @@ def get_or_create_doctor(name: str):
         doctor = doctors.find_one({"_id": result.inserted_id})
     return doctor
 
+def decode_base64_image(image_data: str):
+    """Convert base64 string -> OpenCV frame"""
+    header, encoded = image_data.split(",", 1)
+    img_bytes = base64.b64decode(encoded)
+    np_arr = np.frombuffer(img_bytes, np.uint8)
+    frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    return frame
+
 # ---------------------------
 # Registration
 # ---------------------------
@@ -57,22 +63,17 @@ def get_or_create_doctor(name: str):
 async def register_user(data: dict):
     doctor_name = data.get("doctorName")
     doctor_id = data.get("doctorId")
+    image_data = data.get("image")
 
     if not doctor_name:
         return {"status": "error", "message": "Doctor name required"}
+    if not image_data:
+        return {"status": "error", "message": "Image required"}
 
     doctor = get_or_create_doctor(doctor_name)
-
-    # Capture face
-    cap = cv2.VideoCapture(0)
-    ret, frame = cap.read()
-    cap.release()
-
-    if not ret:
-        return {"status": "error", "message": "Camera error"}
+    frame = decode_base64_image(image_data)
 
     try:
-        # Force DeepFace to use OpenCV instead of RetinaFace
         result = DeepFace.represent(
             frame,
             model_name="Facenet",
@@ -92,11 +93,7 @@ async def register_user(data: dict):
     doctors.update_one({"_id": doctor["_id"]}, {"$inc": {"waiting_count": 1}})
     updated = doctors.find_one({"_id": doctor["_id"]})
 
-    return {
-        "status": "success",
-        "doctorName": updated["name"],
-        "waiting_count": updated["waiting_count"]
-    }
+    return {"status": "success", "doctorName": updated["name"], "waiting_count": updated["waiting_count"]}
 
 # ---------------------------
 # Verification
@@ -104,19 +101,18 @@ async def register_user(data: dict):
 @app.post("/verify/")
 async def verify_user(data: dict):
     doctor_name = data.get("doctorName")
+    image_data = data.get("image")
+
     if not doctor_name:
         return {"status": "error", "message": "Doctor name required"}
+    if not image_data:
+        return {"status": "error", "message": "Image required"}
 
     doctor = doctors.find_one({"name": doctor_name})
     if not doctor:
         return {"status": "error", "message": "Doctor not found"}
 
-    cap = cv2.VideoCapture(0)
-    ret, frame = cap.read()
-    cap.release()
-
-    if not ret:
-        return {"status": "error", "message": "Camera error"}
+    frame = decode_base64_image(image_data)
 
     try:
         result = DeepFace.represent(
@@ -134,7 +130,7 @@ async def verify_user(data: dict):
         stored_enc = np.array(user["encoding"])
         distance = np.linalg.norm(stored_enc - face_encoding)
 
-        if distance < 0.6:  # threshold for Facenet embeddings
+        if distance < 0.6:  # threshold
             users.update_one({"_id": user["_id"]}, {"$set": {"status": "verified"}})
             doctors.update_one({"_id": doctor["_id"]}, {"$inc": {"waiting_count": -1}})
             updated = doctors.find_one({"_id": doctor["_id"]})
@@ -144,14 +140,9 @@ async def verify_user(data: dict):
     return {"status": "not_found", "waiting_count": updated["waiting_count"]}
 
 # ---------------------------
-# Doctor-specific Count
+# Doctor Count
 # ---------------------------
 @app.get("/count/{doctor_name}")
 def get_count(doctor_name: str):
     doctor = get_or_create_doctor(doctor_name)
     return {"doctorName": doctor["name"], "waiting_count": doctor["waiting_count"]}
-
-# ---------------------------
-# Run locally:
-# uvicorn main:app --reload
-# ---------------------------

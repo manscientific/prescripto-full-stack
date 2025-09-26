@@ -4,24 +4,19 @@ import { useLocation } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
-// FastAPI base
-
 function Counter() {
   const location = useLocation();
   const [selectedDoctor, setSelectedDoctor] = useState(null);
-
   const [count, setCount] = useState(0);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // On page load, get doctor passed via navigation
   useEffect(() => {
     if (location.state?.doctor) {
       setSelectedDoctor(location.state.doctor);
     }
   }, [location.state]);
 
-  // Fetch waiting count for selected doctor
   const fetchCount = async () => {
     if (!selectedDoctor) return;
     try {
@@ -33,21 +28,40 @@ function Counter() {
     }
   };
 
-  // Auto-refresh every 2 seconds
   useEffect(() => {
     fetchCount();
     const interval = setInterval(fetchCount, 2000);
     return () => clearInterval(interval);
   }, [selectedDoctor]);
 
-  // Register user for this doctor
+  // Capture image from webcam
+  const captureImage = async () => {
+    const video = document.createElement("video");
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+    await video.play();
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageData = canvas.toDataURL("image/jpeg");
+
+    stream.getTracks().forEach(track => track.stop()); // stop camera
+    return imageData;
+  };
+
   const registerUser = async () => {
     if (!selectedDoctor) return;
     setIsLoading(true);
     try {
+      const imageData = await captureImage();
       const res = await axios.post(`${API_BASE}/register/`, {
         doctorName: selectedDoctor?.name,
         doctorId: selectedDoctor?._id,
+        image: imageData
       });
 
       setMessage(
@@ -62,18 +76,17 @@ function Counter() {
     }
   };
 
-  // Verify user for this doctor
   const verifyUser = async () => {
     if (!selectedDoctor) return;
     setIsLoading(true);
     try {
+      const imageData = await captureImage();
       const res = await axios.post(`${API_BASE}/verify/`, {
         doctorName: selectedDoctor?.name,
+        image: imageData
       });
 
-      setMessage(
-        `✅ ${res.data.status} (Waiting: ${res.data.waiting_count})`
-      );
+      setMessage(`✅ ${res.data.status} (Waiting: ${res.data.waiting_count})`);
       fetchCount();
     } catch (err) {
       console.error("Error verifying:", err);
