@@ -1,29 +1,33 @@
+# backend/main.py
 import cv2
 import base64
+import numpy as np
 from deepface import DeepFace
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
-import numpy as np
+from bson import ObjectId
+import os
 
 # ---------------------------
 # Config
 # ---------------------------
-FRONTEND_URL = "https://prescripto-full-stack-five.vercel.app"
-MONGODB_URI = "mongodb+srv://manscientificks:12345678sh@cluster0.kjqvrc9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+FRONTEND_URLS = [
+    "https://prescripto-full-stack-ev9e1z15c-manscientifics-projects.vercel.app",  # production frontend
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+MONGODB_URI = os.getenv("MONGODB_URI") or "mongodb+srv://manscientificks:12345678sh@cluster0.kjqvrc9.mongodb.net/?retryWrites=true&w=majority"
 
 app = FastAPI()
 
-# ✅ Allow frontend + local dev
-origins = [
-    FRONTEND_URL,
-    "http://localhost:5173",
-    "http://127.0.0.1:5173"
-]
-
+# ---------------------------
+# CORS
+# ---------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ⚠️ Only for testing, not production
+    allow_origins=FRONTEND_URLS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,7 +54,10 @@ def get_or_create_doctor(name: str):
 
 def decode_base64_image(image_data: str):
     """Convert base64 string -> OpenCV frame"""
-    header, encoded = image_data.split(",", 1)
+    if "," in image_data:
+        _, encoded = image_data.split(",", 1)
+    else:
+        encoded = image_data
     img_bytes = base64.b64decode(encoded)
     np_arr = np.frombuffer(img_bytes, np.uint8)
     frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
@@ -62,13 +69,10 @@ def decode_base64_image(image_data: str):
 @app.post("/register/")
 async def register_user(data: dict):
     doctor_name = data.get("doctorName")
-    doctor_id = data.get("doctorId")
     image_data = data.get("image")
 
-    if not doctor_name:
-        return {"status": "error", "message": "Doctor name required"}
-    if not image_data:
-        return {"status": "error", "message": "Image required"}
+    if not doctor_name or not image_data:
+        raise HTTPException(status_code=400, detail="Doctor name and image are required.")
 
     doctor = get_or_create_doctor(doctor_name)
     frame = decode_base64_image(image_data)
@@ -82,7 +86,7 @@ async def register_user(data: dict):
         )
         face_encoding = result[0]["embedding"]
     except Exception:
-        return {"status": "error", "message": "No face found"}
+        raise HTTPException(status_code=400, detail="No face found in the image.")
 
     users.insert_one({
         "doctorId": doctor["_id"],
@@ -103,14 +107,12 @@ async def verify_user(data: dict):
     doctor_name = data.get("doctorName")
     image_data = data.get("image")
 
-    if not doctor_name:
-        return {"status": "error", "message": "Doctor name required"}
-    if not image_data:
-        return {"status": "error", "message": "Image required"}
+    if not doctor_name or not image_data:
+        raise HTTPException(status_code=400, detail="Doctor name and image are required.")
 
     doctor = doctors.find_one({"name": doctor_name})
     if not doctor:
-        return {"status": "error", "message": "Doctor not found"}
+        raise HTTPException(status_code=404, detail="Doctor not found.")
 
     frame = decode_base64_image(image_data)
 
@@ -123,13 +125,11 @@ async def verify_user(data: dict):
         )
         face_encoding = np.array(result[0]["embedding"])
     except Exception:
-        return {"status": "error", "message": "No face found"}
+        raise HTTPException(status_code=400, detail="No face found in the image.")
 
-    # Compare with stored users
     for user in users.find({"doctorId": doctor["_id"], "status": "waiting"}):
         stored_enc = np.array(user["encoding"])
         distance = np.linalg.norm(stored_enc - face_encoding)
-
         if distance < 0.6:  # threshold
             users.update_one({"_id": user["_id"]}, {"$set": {"status": "verified"}})
             doctors.update_one({"_id": doctor["_id"]}, {"$inc": {"waiting_count": -1}})

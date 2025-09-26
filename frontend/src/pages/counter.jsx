@@ -1,3 +1,4 @@
+// frontend/src/Counter.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
@@ -20,7 +21,7 @@ function Counter() {
   const fetchCount = async () => {
     if (!selectedDoctor) return;
     try {
-      const res = await axios.get(`${API_BASE}/count/${selectedDoctor.name}`);
+      const res = await axios.get(`${API_BASE}/count/${encodeURIComponent(selectedDoctor.name)}`);
       setCount(res.data.waiting_count);
     } catch (err) {
       console.error("Error fetching count:", err);
@@ -37,19 +38,23 @@ function Counter() {
   // Capture image from webcam
   const captureImage = async () => {
     const video = document.createElement("video");
+    video.style.display = "none";
+    document.body.appendChild(video);
+
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     video.srcObject = stream;
     await video.play();
 
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imageData = canvas.toDataURL("image/jpeg");
+    stream.getTracks().forEach(track => track.stop());
+    document.body.removeChild(video);
 
-    stream.getTracks().forEach(track => track.stop()); // stop camera
     return imageData;
   };
 
@@ -60,13 +65,9 @@ function Counter() {
       const imageData = await captureImage();
       const res = await axios.post(`${API_BASE}/register/`, {
         doctorName: selectedDoctor?.name,
-        doctorId: selectedDoctor?._id,
         image: imageData
       });
-
-      setMessage(
-        `✅ Registered with Dr. ${res.data.doctorName} (Waiting: ${res.data.waiting_count})`
-      );
+      setMessage(`✅ Registered with Dr. ${res.data.doctorName} (Waiting: ${res.data.waiting_count})`);
       fetchCount();
     } catch (err) {
       console.error("Error registering:", err);
@@ -85,7 +86,6 @@ function Counter() {
         doctorName: selectedDoctor?.name,
         image: imageData
       });
-
       setMessage(`✅ ${res.data.status} (Waiting: ${res.data.waiting_count})`);
       fetchCount();
     } catch (err) {
