@@ -4,33 +4,44 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 import numpy as np
-from bson import ObjectId
-from dotenv import load_dotenv
-import os
 
-# Load environment variables
-load_dotenv()
-frontend = os.getenv("frontend")
-mongo_uri = os.getenv("MONGODB_URI")   # <-- added
+# ---------------------------
+# Config (directly written here for now)
+# ---------------------------
+FRONTEND_URL = "https://prescripto-full-stack-five.vercel.app"
+MONGODB_URI = "mongodb+srv://manscientificks:12345678sh@cluster0.kjqvrc9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
+# ---------------------------
+# FastAPI App
+# ---------------------------
 app = FastAPI()
+
+# ✅ Allow frontend + local dev
+origins = [
+    FRONTEND_URL,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Use MongoDB from environment variable
-client = MongoClient(mongo_uri)   # <-- replaced
+# ---------------------------
+# Database Setup
+# ---------------------------
+client = MongoClient(MONGODB_URI)
 db = client["waiting_room"]
 users = db["users"]
 doctors = db["doctors"]
 
-
-# ---- Helper ----
+# ---------------------------
+# Helpers
+# ---------------------------
 def get_or_create_doctor(name: str):
     doctor = doctors.find_one({"name": name})
     if not doctor:
@@ -39,7 +50,9 @@ def get_or_create_doctor(name: str):
         doctor = doctors.find_one({"_id": result.inserted_id})
     return doctor
 
-# ---- Registration ----
+# ---------------------------
+# Registration
+# ---------------------------
 @app.post("/register/")
 async def register_user(data: dict):
     doctor_name = data.get("doctorName")
@@ -59,11 +72,11 @@ async def register_user(data: dict):
         return {"status": "error", "message": "Camera error"}
 
     try:
-        # 🔑 Force DeepFace to use OpenCV instead of RetinaFace
+        # Force DeepFace to use OpenCV instead of RetinaFace
         result = DeepFace.represent(
             frame,
             model_name="Facenet",
-            detector_backend="opencv",   # <--- added
+            detector_backend="opencv",
             enforce_detection=True
         )
         face_encoding = result[0]["embedding"]
@@ -85,7 +98,9 @@ async def register_user(data: dict):
         "waiting_count": updated["waiting_count"]
     }
 
-# ---- Verification ----
+# ---------------------------
+# Verification
+# ---------------------------
 @app.post("/verify/")
 async def verify_user(data: dict):
     doctor_name = data.get("doctorName")
@@ -104,11 +119,10 @@ async def verify_user(data: dict):
         return {"status": "error", "message": "Camera error"}
 
     try:
-        # 🔑 Again force OpenCV
         result = DeepFace.represent(
             frame,
             model_name="Facenet",
-            detector_backend="opencv",   # <--- added
+            detector_backend="opencv",
             enforce_detection=True
         )
         face_encoding = np.array(result[0]["embedding"])
@@ -129,9 +143,15 @@ async def verify_user(data: dict):
     updated = doctors.find_one({"_id": doctor["_id"]})
     return {"status": "not_found", "waiting_count": updated["waiting_count"]}
 
-# ---- Doctor-specific Count ----
+# ---------------------------
+# Doctor-specific Count
+# ---------------------------
 @app.get("/count/{doctor_name}")
 def get_count(doctor_name: str):
     doctor = get_or_create_doctor(doctor_name)
     return {"doctorName": doctor["name"], "waiting_count": doctor["waiting_count"]}
+
+# ---------------------------
+# Run locally:
 # uvicorn main:app --reload
+# ---------------------------
