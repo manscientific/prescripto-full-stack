@@ -55,8 +55,13 @@ async def register_user(data: dict):
         return {"status": "error", "message": "Camera error"}
 
     try:
-        # Extract face embedding
-        result = DeepFace.represent(frame, model_name="Facenet", enforce_detection=True)
+        # 🔑 Force DeepFace to use OpenCV instead of RetinaFace
+        result = DeepFace.represent(
+            frame,
+            model_name="Facenet",
+            detector_backend="opencv",   # <--- added
+            enforce_detection=True
+        )
         face_encoding = result[0]["embedding"]
     except Exception:
         return {"status": "error", "message": "No face found"}
@@ -95,7 +100,13 @@ async def verify_user(data: dict):
         return {"status": "error", "message": "Camera error"}
 
     try:
-        result = DeepFace.represent(frame, model_name="Facenet", enforce_detection=True)
+        # 🔑 Again force OpenCV
+        result = DeepFace.represent(
+            frame,
+            model_name="Facenet",
+            detector_backend="opencv",   # <--- added
+            enforce_detection=True
+        )
         face_encoding = np.array(result[0]["embedding"])
     except Exception:
         return {"status": "error", "message": "No face found"}
@@ -119,4 +130,3 @@ async def verify_user(data: dict):
 def get_count(doctor_name: str):
     doctor = get_or_create_doctor(doctor_name)
     return {"doctorName": doctor["name"], "waiting_count": doctor["waiting_count"]}
-#python -m uvicorn main:app --reload
