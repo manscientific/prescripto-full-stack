@@ -1,4 +1,3 @@
-# backend/main.py
 import cv2
 import base64
 import numpy as np
@@ -8,26 +7,27 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 from bson import ObjectId
 import os
+import re
 
 # ---------------------------
 # Config
 # ---------------------------
-FRONTEND_URLS = [
-    "https://prescripto-full-stack-ev9e1z15c-manscientifics-projects.vercel.app",  # production frontend
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
 MONGODB_URI = os.getenv("MONGODB_URI") or "mongodb+srv://manscientificks:12345678sh@cluster0.kjqvrc9.mongodb.net/?retryWrites=true&w=majority"
 
 app = FastAPI()
 
 # ---------------------------
-# CORS
+# CORS - Fixed Configuration
 # ---------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=FRONTEND_URLS,
+    allow_origin_regex=r"https://prescripto-full-stack-.*-manscientifics-projects\.vercel\.app",
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://prescripto-full-stack-ev9e1z15c-manscientifics-projects.vercel.app",
+        "https://prescripto-full-stack-mw4rzksvj-manscientifics-projects.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,8 +85,8 @@ async def register_user(data: dict):
             enforce_detection=True
         )
         face_encoding = result[0]["embedding"]
-    except Exception:
-        raise HTTPException(status_code=400, detail="No face found in the image.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"No face found in the image. Error: {str(e)}")
 
     users.insert_one({
         "doctorId": doctor["_id"],
@@ -124,8 +124,8 @@ async def verify_user(data: dict):
             enforce_detection=True
         )
         face_encoding = np.array(result[0]["embedding"])
-    except Exception:
-        raise HTTPException(status_code=400, detail="No face found in the image.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"No face found in the image. Error: {str(e)}")
 
     for user in users.find({"doctorId": doctor["_id"], "status": "waiting"}):
         stored_enc = np.array(user["encoding"])
@@ -146,3 +146,22 @@ async def verify_user(data: dict):
 def get_count(doctor_name: str):
     doctor = get_or_create_doctor(doctor_name)
     return {"doctorName": doctor["name"], "waiting_count": doctor["waiting_count"]}
+
+# ---------------------------
+# Health Check
+# ---------------------------
+@app.get("/")
+def health_check():
+    return {"status": "OK", "message": "Backend is running"}
+
+# ---------------------------
+# Get All Doctors
+# ---------------------------
+@app.get("/doctors/")
+def get_all_doctors():
+    all_doctors = list(doctors.find({}, {"_id": 0, "name": 1, "waiting_count": 1}))
+    return {"doctors": all_doctors}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
