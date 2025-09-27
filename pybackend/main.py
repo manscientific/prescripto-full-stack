@@ -5,12 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 import numpy as np
 from bson import ObjectId
+import datetime
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React
+    allow_origins=["http://localhost:5173"],  # React frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,19 +37,15 @@ def get_or_create_doctor(name: str):
 @app.post("/register/")
 async def register_user(data: dict):
     doctor_name = data.get("doctorName")
-    doctor_id = data.get("doctorId")
-
     if not doctor_name:
         return {"status": "error", "message": "Doctor name required"}
 
-    # Ensure doctor exists
     doctor = get_or_create_doctor(doctor_name)
 
-    # Capture face
+    # Capture face from camera
     cap = cv2.VideoCapture(0)
     ret, frame = cap.read()
     cap.release()
-
     if not ret:
         return {"status": "error", "message": "Camera error"}
 
@@ -57,23 +54,28 @@ async def register_user(data: dict):
     if not encodings:
         return {"status": "error", "message": "No face found"}
 
-    face_encoding = encodings[0].tolist()
+    face_encoding = encodings[0]
 
+    # Check if face already registered for this doctor
+    for user in users.find({"doctorId": doctor["_id"]}):
+        stored_enc = np.array(user["encoding"])
+        match = face_recognition.compare_faces([stored_enc], face_encoding)[0]
+        if match:
+            return {"status": "error", "message": "Face already registered for this doctor"}
+
+    # Insert new user
     users.insert_one({
         "doctorId": doctor["_id"],
-        "encoding": face_encoding,
-        "status": "waiting"
+        "encoding": face_encoding.tolist(),
+        "status": "waiting",
+        "timestamp": datetime.datetime.now()
     })
 
-    # Update doctor count
+    # Update doctor's waiting count
     doctors.update_one({"_id": doctor["_id"]}, {"$inc": {"waiting_count": 1}})
     updated = doctors.find_one({"_id": doctor["_id"]})
 
-    return {
-        "status": "success",
-        "doctorName": updated["name"],
-        "waiting_count": updated["waiting_count"]
-    }
+    return {"status": "success", "doctorName": updated["name"], "waiting_count": updated["waiting_count"]}
 
 
 # ---- Verification ----
@@ -90,7 +92,6 @@ async def verify_user(data: dict):
     cap = cv2.VideoCapture(0)
     ret, frame = cap.read()
     cap.release()
-
     if not ret:
         return {"status": "error", "message": "Camera error"}
 
@@ -105,10 +106,12 @@ async def verify_user(data: dict):
         stored_enc = np.array(user["encoding"])
         match = face_recognition.compare_faces([stored_enc], face_encoding)[0]
         if match:
-            users.update_one({"_id": user["_id"]}, {"$set": {"status": "verified"}})
+            # Delete user after successful verification
+            users.delete_one({"_id": user["_id"]})
+            # Decrease doctor's waiting count
             doctors.update_one({"_id": doctor["_id"]}, {"$inc": {"waiting_count": -1}})
             updated = doctors.find_one({"_id": doctor["_id"]})
-            return {"status": "verified", "waiting_count": updated["waiting_count"]}
+            return {"status": "verified & deleted", "waiting_count": updated["waiting_count"]}
 
     updated = doctors.find_one({"_id": doctor["_id"]})
     return {"status": "not_found", "waiting_count": updated["waiting_count"]}

@@ -40,13 +40,18 @@ function Register() {
         doctorName: doctor.name,
         doctorId: doctor._id,
       });
-      setMessage(
-        `✅ Registered with Dr. ${res.data.doctorName} (Waiting: ${res.data.waiting_count})`
-      );
-      fetchCount();
+
+      if (res.data.status === "success") {
+        setMessage(
+          `✅ Registered with Dr. ${res.data.doctorName} (Waiting: ${res.data.waiting_count})`
+        );
+        fetchCount();
+      } else {
+        setMessage(`❌ ${res.data.message}`);
+      }
     } catch (err) {
       console.error(err);
-      setMessage("❌ Error registering");
+      setMessage(err.response?.data?.message || "❌ Error registering");
     } finally {
       setIsLoading(false);
     }
