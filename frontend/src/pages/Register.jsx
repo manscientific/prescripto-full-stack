@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 
 const API_BASE = "http://localhost:8000";
 
-function Verify() {
+function Register() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
   const [count, setCount] = useState(0);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (location.state?.doctor) {
-      setDoctor(location.state.doctor);
-    } else {
-      // 🚨 If no doctor info (direct URL access), redirect to login
-      navigate("/doctor-login");
-    }
-  }, [location.state, navigate]);
+    if (location.state?.doctor) setDoctor(location.state.doctor);
+  }, [location.state]);
 
   const fetchCount = async () => {
     if (!doctor) return;
@@ -38,40 +32,40 @@ function Verify() {
     return () => clearInterval(interval);
   }, [doctor]);
 
-  const verifyUser = async () => {
+  const registerUser = async () => {
     if (!doctor) return;
     setIsLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/verify/`, {
+      const res = await axios.post(`${API_BASE}/register/`, {
         doctorName: doctor.name,
+        doctorId: doctor._id,
       });
-      setMessage(`✅ ${res.data.status} (Waiting: ${res.data.waiting_count})`);
+      setMessage(
+        `✅ Registered with Dr. ${res.data.doctorName} (Waiting: ${res.data.waiting_count})`
+      );
       fetchCount();
     } catch (err) {
       console.error(err);
-      setMessage("❌ Error verifying");
+      setMessage("❌ Error registering");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!doctor) return null; // don’t render until doctor is set
-
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>Verification Panel</h1>
-      <h2>Doctor: {doctor?.name}</h2>
+      <h1>Register for Dr. {doctor?.name}</h1>
       <h2>Current Waiting Users: {count}</h2>
       <button
-        onClick={verifyUser}
+        onClick={registerUser}
         disabled={isLoading || !doctor}
         style={{ margin: "10px", padding: "10px" }}
       >
-        {isLoading ? "Processing..." : "Verify User"}
+        {isLoading ? "Processing..." : "Register Face"}
       </button>
       <p style={{ marginTop: "20px", color: "blue" }}>{message}</p>
     </div>
   );
 }
 
-export default Verify;
+export default Register;

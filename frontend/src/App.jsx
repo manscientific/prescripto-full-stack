@@ -14,6 +14,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Verify from './pages/Verify'
 import Counter from './pages/counter'
+import Register from './pages/Register'
+import DoctorLogin from './pages/DoctorLogin'
 
 const App = () => {
   return (
@@ -32,6 +34,8 @@ const App = () => {
         <Route path='/my-profile' element={<MyProfile />} />
         <Route path='/verify' element={<Verify />} />
         <Route path='/counter' element={<Counter />} />
+        <Route path="/register" element={<Register />} />
+         <Route path="/doctor-login" element={<DoctorLogin />} />
       </Routes>
       <Footer />
     </div>
