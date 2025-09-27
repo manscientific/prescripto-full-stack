@@ -1,6 +1,6 @@
-import React from 'react'
+
 import Navbar from './components/Navbar'
-import { Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Doctors from './pages/Doctors'
 import Login from './pages/Login'
@@ -17,24 +17,26 @@ import Counter from './pages/counter'
 
 const App = () => {
   return (
-    <div className='mx-4 sm:mx-[10%]'>
-      <ToastContainer />
-      <Navbar />
-      <Routes>
-        <Route path='/' element={<Home />} />
-        <Route path='/doctors' element={<Doctors />} />
-        <Route path='/doctors/:speciality' element={<Doctors />} />
-        <Route path='/login' element={<Login />} />
-        <Route path='/about' element={<About />} />
-        <Route path='/contact' element={<Contact />} />
-        <Route path='/appointment/:docId' element={<Appointment />} />
-        <Route path='/my-appointments' element={<MyAppointments />} />
-        <Route path='/my-profile' element={<MyProfile />} />
-        <Route path='/verify' element={<Verify />} />
-        <Route path='/counter' element={<Counter />} />
-      </Routes>
-      <Footer />
-    </div>
+    <Router>
+      <div className='mx-4 sm:mx-[10%]'>
+        <ToastContainer />
+        <Navbar />
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/doctors' element={<Doctors />} />
+          <Route path='/doctors/:speciality' element={<Doctors />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/about' element={<About />} />
+          <Route path='/contact' element={<Contact />} />
+          <Route path='/appointment/:docId' element={<Appointment />} />
+          <Route path='/my-appointments' element={<MyAppointments />} />
+          <Route path='/my-profile' element={<MyProfile />} />
+          <Route path='/verify' element={<Verify />} />
+          <Route path='/counter' element={<Counter />} />
+        </Routes>
+        <Footer />
+      </div>
+    </Router>
   )
 }
 

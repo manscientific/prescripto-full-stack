@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { assets } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
 
@@ -49,4 +49,5 @@ const Banner = () => {
     )
 }
 
-export default Banner
+// FIX: The line below is the corrected version.
+export default Banner;

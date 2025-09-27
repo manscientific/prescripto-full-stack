@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 
@@ -21,24 +21,26 @@ function Counter() {
     }
   }, [location.state]);
 
-  // Fetch waiting count for selected doctor
-  const fetchCount = async () => {
+  // Fetch waiting count for selected doctor (memoized)
+  const fetchCount = useCallback(async () => {
     if (!selectedDoctor) return;
     try {
-      const res = await axios.get(`${API_BASE}/count/${selectedDoctor.name}`);
-      setCount(res.data.waiting_count);
+      const res = await axios.get(
+        `${API_BASE}/count/${encodeURIComponent(selectedDoctor.name)}`
+      );
+      setCount(res.data?.waiting_count ?? 0);
     } catch (err) {
       console.error("Error fetching count:", err);
       setMessage("❌ Error fetching count");
     }
-  };
+  }, [selectedDoctor]);
 
   // Auto-refresh every 2 seconds
   useEffect(() => {
     fetchCount();
     const interval = setInterval(fetchCount, 2000);
     return () => clearInterval(interval);
-  }, [selectedDoctor]);
+  }, [fetchCount]);
 
   // Register user for this doctor
   const registerUser = async () => {

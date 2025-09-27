@@ -1,11 +1,12 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  const [state, setState] = useState('Sign Up');
+  // use boolean to avoid string-typo bugs
+  const [isSignUp, setIsSignUp] = useState(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +18,7 @@ const Login = () => {
   // Check if token is expired
   const isTokenExpired = (token) => {
     if (!token) return true;
-    
+
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
@@ -50,9 +51,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (state === 'Sign Up') {
-        const { data } = await axios.post(backendUrl + '/api/user/register', { 
-          name, email, password 
+      if (isSignUp) {
+        const { data } = await axios.post(backendUrl + '/api/user/register', {
+          name, email, password
         });
 
         if (data.success) {
@@ -63,8 +64,8 @@ const Login = () => {
           toast.error(data.message);
         }
       } else {
-        const { data } = await axios.post(backendUrl + '/api/user/login', { 
-          email, password 
+        const { data } = await axios.post(backendUrl + '/api/user/login', {
+          email, password
         });
 
         if (data.success) {
@@ -87,20 +88,32 @@ const Login = () => {
     }
   };
 
+  const switchToLogin = () => {
+    setIsSignUp(false);
+    setName('');
+    setPassword('');
+  };
+
+  const switchToSignUp = () => {
+    setIsSignUp(true);
+    setName('');
+    setPassword('');
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {state === 'Sign Up' ? 'Create your account' : 'Sign in to your account'}
+            {isSignUp ? 'Create your account' : 'Sign in to your account'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {state === 'Sign Up' ? 'Please sign up to book appointments' : 'Please log in to book appointments'}
+            {isSignUp ? 'Please sign up to book appointments' : 'Please log in to book appointments'}
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={onSubmitHandler}>
           <div className="rounded-md shadow-sm -space-y-px">
-            {state === 'Sign Up' && (
+            {isSignUp && (
               <div>
                 <label htmlFor="name" className="sr-only">Full Name</label>
                 <input
@@ -127,7 +140,7 @@ const Login = () => {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={state === 'Sign Up' ? {} : { borderTopLeftRadius: '0.375rem', borderTopRightRadius: '0.375rem' }}
+                style={isSignUp ? {} : { borderTopLeftRadius: '0.375rem', borderTopRightRadius: '0.375rem' }}
               />
             </div>
             <div>
@@ -154,7 +167,7 @@ const Login = () => {
             >
               {loading ? (
                 <span>Processing...</span>
-              ) : state === 'Sign Up' ? (
+              ) : isSignUp ? (
                 <span>Create account</span>
               ) : (
                 <span>Sign in</span>
@@ -163,12 +176,12 @@ const Login = () => {
           </div>
 
           <div className="text-center">
-            {state === 'Sign Up' ? (
+            {isSignUp ? (
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
                 <button
                   type="button"
-                  onClick={() => setState('Login')}
+                  onClick={switchToLogin}
                   className="font-medium text-indigo-600 hover:text-indigo-500"
                 >
                   Login here
@@ -179,7 +192,7 @@ const Login = () => {
                 Don't have an account?{' '}
                 <button
                   type="button"
-                  onClick={() => setState('Sign Up')}
+                  onClick={switchToSignUp}
                   className="font-medium text-indigo-600 hover:text-indigo-500"
                 >
                   Sign up here
