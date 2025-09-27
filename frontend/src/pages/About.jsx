@@ -1,10 +1,9 @@
-
 import { assets } from '../assets/assets'
 
 const About = () => {
   return (
     <div>
-    
+
       <div className='text-center text-2xl pt-10 text-[#707070]'>
         <p>ABOUT <span className='text-gray-700 font-semibold'>US</span></p>
       </div>
@@ -20,7 +19,7 @@ const About = () => {
       </div>
 
       <div className='text-xl my-4'>
-        <p>WHY <span className='text-gray-700 font-semibold'>CHOOSE US</span></p>
+        <p>WHY  <span className='text-gray-700 font-semibold'>CHOOSE US</span></p>
       </div>
 
       <div className='flex flex-col md:flex-row mb-20'>

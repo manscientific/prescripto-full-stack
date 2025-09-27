@@ -1,33 +1,94 @@
-import React, { useContext } from 'react'
+import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
-const TopDoctors = () => {
 
+function TopDoctors() {
     const navigate = useNavigate()
-
     const { doctors } = useContext(AppContext)
 
-    return (
-        <div className='flex flex-col items-center gap-4 my-16 text-[#262626] md:mx-10'>
-            <h1 className='text-3xl font-medium'>Top Doctors to Book</h1>
-            <p className='sm:w-1/3 text-center text-sm'>Simply browse through our extensive list of trusted doctors.</p>
-            <div className='w-full grid grid-cols-auto gap-4 pt-5 gap-y-6 px-3 sm:px-0'>
-                {doctors.slice(0, 10).map((item, index) => (
-                    <div onClick={() => { navigate(`/appointment/${item._id}`); scrollTo(0, 0) }} className='border border-[#C9D8FF] rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500' key={index}>
-                        <img className='bg-[#EAEFFF]' src={item.image} alt="" />
-                        <div className='p-4'>
-                            <div className={`flex items-center gap-2 text-sm text-center ${item.available ? 'text-green-500' : "text-gray-500"}`}>
-                                <p className={`w-2 h-2 rounded-full ${item.available ? 'bg-green-500' : "bg-gray-500"}`}></p><p>{item.available ? 'Available' : "Not Available"}</p>
-                            </div>
-                            <p className='text-[#262626] text-lg font-medium'>{item.name}</p>
-                            <p className='text-[#5C5C5C] text-sm'>{item.speciality}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            <button onClick={() => { navigate('/doctors'); scrollTo(0, 0) }} className='bg-[#EAEFFF] text-gray-600 px-12 py-3 rounded-full mt-10'>more</button>
-        </div>
+    function handleDoctorClick(doctorId) {
+        navigate(`/appointment/${doctorId}`)
+        scrollTo(0, 0)
+    }
 
+    function handleViewAllClick() {
+        navigate('/doctors')
+        scrollTo(0, 0)
+    }
+
+    return (
+        <div className='relative bg-gradient-to-b from-gray-50 via-white to-gray-50 py-20'>
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-[url('/grid.png')] opacity-5"></div>
+            
+            <div className='container mx-auto px-4'>
+                <div className='text-center mb-16'>
+                    <h1 className='text-4xl md:text-5xl font-bold text-gray-800 mb-6 tracking-tight'>
+                        Top Rated Doctors
+                    </h1>
+                    <p className='text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed'>
+                        Connect with our highly qualified and experienced medical professionals
+                    </p>
+                </div>
+
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8'>
+                    {doctors.slice(0, 8).map((doctor, index) => (
+                        <div 
+                            key={index}
+                            onClick={() => handleDoctorClick(doctor._id)} 
+                            className='group bg-white rounded-2xl overflow-hidden cursor-pointer
+                                     shadow-md hover:shadow-xl transition-all duration-500
+                                     hover:-translate-y-2 border border-gray-100'
+                        >
+                            <div className='relative h-64 overflow-hidden'>
+                                <img 
+                                    className='w-full h-full object-cover group-hover:scale-110 
+                                             transition-transform duration-500' 
+                                    src={doctor.image} 
+                                    alt={doctor.name}
+                                    onError={(e) => { e.target.src = '/placeholder-doctor.jpg' }}
+                                />
+                                <div className='absolute inset-0 bg-gradient-to-t from-black/30 to-transparent'></div>
+                            </div>
+                            
+                            <div className='p-6'>
+                                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full
+                                              text-sm font-medium mb-4 
+                                              ${doctor.available 
+                                                ? 'bg-green-100 text-green-700 border border-green-200' 
+                                                : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                                    <span className={`w-2 h-2 rounded-full 
+                                                  ${doctor.available ? 'bg-green-500' : 'bg-gray-500'}`}>
+                                    </span>
+                                    {doctor.available ? 'Available' : 'Not Available'}
+                                </div>
+                                
+                                <h3 className='text-xl font-semibold text-gray-800 mb-2 
+                                             group-hover:text-primary transition-colors'>
+                                    {doctor.name}
+                                </h3>
+                                <p className='text-primary/80 font-medium'>
+                                    {doctor.speciality}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className='text-center mt-16'>
+                    <button 
+                        onClick={handleViewAllClick} 
+                        className='bg-primary text-white px-8 py-4 rounded-full
+                                 text-lg font-medium hover:bg-primary/90
+                                 transform transition-all duration-300
+                                 hover:scale-105 hover:shadow-lg
+                                 focus:outline-none focus:ring-2 focus:ring-primary/50'
+                    >
+                        View All Doctors
+                    </button>
+                </div>
+            </div>
+        </div>
     )
 }
 
