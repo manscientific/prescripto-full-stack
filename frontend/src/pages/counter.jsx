@@ -69,12 +69,12 @@ function Counter() {
             📝 Patient Registration
           </button>
 
-          <button
+          {/* <button
             onClick={() => navigate("/doctor-login", { state: { doctor: selectedDoctor } })}
             style={styles.secondaryButton}
           >
             🔒 Doctor Verification
-          </button>
+          </button> */}
         </div>
 
         {message && (

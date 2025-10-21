@@ -12,10 +12,11 @@ import MyProfile from './pages/MyProfile'
 import Footer from './components/Footer'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Verify from './pages/Verify'
+// import Verify from './pages/Verify'
 import Counter from './pages/counter'
 import Register from './pages/Register'
-import DoctorLogin from './pages/DoctorLogin'
+// import DoctorLogin from './pages/DoctorLogin'
+import WaitingCount from './pages/WaitingCount'
 
 const App = () => {
   return (
@@ -32,10 +33,11 @@ const App = () => {
         <Route path='/appointment/:docId' element={<Appointment />} />
         <Route path='/my-appointments' element={<MyAppointments />} />
         <Route path='/my-profile' element={<MyProfile />} />
-         <Route path='/verify' element={<Verify />} /> 
+         {/* <Route path='/verify' element={<Verify />} />  */}
         <Route path='/counter' element={<Counter />} />
         <Route path="/register" element={<Register />} />
-         <Route path="/doctor-login" element={<DoctorLogin />} />
+         {/* <Route path="/doctor-login" element={<DoctorLogin />} /> */}
+         <Route path="/waiting-count/:doctorName" element={<WaitingCount />} />
       </Routes>
       <Footer />
     </div>

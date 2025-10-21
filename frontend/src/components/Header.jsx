@@ -137,7 +137,7 @@ const Header = () => {
                             </div>
 
                             {/* Emergency Badge */}
-                            <div className='absolute top-1/2 -left-5 bg-red-500 text-white px-4 py-3 rounded-2xl shadow-2xl rotate-90 font-black text-lg'>
+                            <div className='absolute bottom-1/5 -right-10 bg-red-500 text-white px-4 py-3 rounded-2xl shadow-2xl  font-black text-lg'>
                                 🚨 24/7 EMERGENCY
                             </div>
                         </div>

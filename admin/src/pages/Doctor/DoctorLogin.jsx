@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { assets } from '../assets/assets';
+import { assets } from '../../../../frontend/src/assets/assets';
 
 function DoctorLogin() {
   const [password, setPassword] = useState("");

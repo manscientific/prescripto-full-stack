@@ -4,14 +4,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 import numpy as np
-from bson import ObjectId
 import datetime
 
 app = FastAPI()
 
+# ✅ Allow both localhost:5173 and localhost:5174
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React frontend
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,7 +24,6 @@ client = MongoClient("mongodb://localhost:27017/")
 db = client["waiting_room"]
 users = db["users"]
 doctors = db["doctors"]
-
 
 # ---- Helper ----
 def get_or_create_doctor(name: str):
@@ -42,7 +44,6 @@ async def register_user(data: dict):
 
     doctor = get_or_create_doctor(doctor_name)
 
-    # Capture face from camera
     cap = cv2.VideoCapture(0)
     ret, frame = cap.read()
     cap.release()
@@ -63,7 +64,6 @@ async def register_user(data: dict):
         if match:
             return {"status": "error", "message": "Face already registered for this doctor"}
 
-    # Insert new user
     users.insert_one({
         "doctorId": doctor["_id"],
         "encoding": face_encoding.tolist(),
@@ -71,11 +71,14 @@ async def register_user(data: dict):
         "timestamp": datetime.datetime.now()
     })
 
-    # Update doctor's waiting count
     doctors.update_one({"_id": doctor["_id"]}, {"$inc": {"waiting_count": 1}})
     updated = doctors.find_one({"_id": doctor["_id"]})
 
-    return {"status": "success", "doctorName": updated["name"], "waiting_count": updated["waiting_count"]}
+    return {
+        "status": "success",
+        "doctorName": updated["name"],
+        "waiting_count": updated["waiting_count"]
+    }
 
 
 # ---- Verification ----
@@ -106,9 +109,7 @@ async def verify_user(data: dict):
         stored_enc = np.array(user["encoding"])
         match = face_recognition.compare_faces([stored_enc], face_encoding)[0]
         if match:
-            # Delete user after successful verification
             users.delete_one({"_id": user["_id"]})
-            # Decrease doctor's waiting count
             doctors.update_one({"_id": doctor["_id"]}, {"$inc": {"waiting_count": -1}})
             updated = doctors.find_one({"_id": doctor["_id"]})
             return {"status": "verified & deleted", "waiting_count": updated["waiting_count"]}

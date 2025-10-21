@@ -100,7 +100,7 @@ const Banner = () => {
                             />
                             
                             {/* Floating Statistics Card */}
-                            <div className='absolute -top-5 -right-5 bg-white rounded-3xl p-5 shadow-2xl animate-bounce-slow border-2 border-primary/20'>
+                            <div className='absolute -top-5 -right-5 bg-white rounded-3xl p-1 shadow-2xl animate-bounce-slow border-2 border-primary/20'>
                                 <div className='text-center'>
                                     <div className='text-4xl text-primary mb-2'>👥</div>
                                     <p className='font-black text-gray-900 text-2xl'>10K+</p>
@@ -120,7 +120,7 @@ const Banner = () => {
                             </div>
 
                             {/* Success Rate Badge */}
-                            <div className='absolute top-1/2 -left-10 bg-green-500 text-white px-5 py-3 rounded-2xl shadow-2xl rotate-90 font-black text-lg whitespace-nowrap'>
+                            <div className='absolute top-1/2 -left-10 bg-green-500 text-white px-5 py-3 rounded-2xl shadow-2xl  font-black text-lg whitespace-nowrap'>
                                 🎯 99% SUCCESS RATE
                             </div>
                         </div>
