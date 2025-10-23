@@ -5,5 +5,6 @@ facenet-pytorch
 torch
 torchvision
 numpy
-Pillow
+Pillow==10.0.0
+
 opencv-python-headless
