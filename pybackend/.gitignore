@@ -1,1 +1,9 @@
 .env
+# Python cache
+pybackend/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# PDF / temp files (optional)
+*.pdf
