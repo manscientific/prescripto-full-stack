@@ -2,10 +2,8 @@ fastapi
 uvicorn
 pymongo
 facenet-pytorch
-mediapipe
 torch
 torchvision
-opencv-python-headless
 numpy
-pillow
-python-multipart
+Pillow
+opencv-python-headless
