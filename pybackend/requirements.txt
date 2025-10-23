@@ -1,7 +1,11 @@
 fastapi
 uvicorn
 pymongo
-opencv-python
-face-recognition
+facenet-pytorch
+mediapipe
+torch
+torchvision
+opencv-python-headless
 numpy
+pillow
 python-multipart
